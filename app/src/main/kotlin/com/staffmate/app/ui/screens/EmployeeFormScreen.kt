@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -102,6 +103,7 @@ fun EmployeeFormScreen(navController: NavHostController, employeeId: Long) {
                                 )
                             }
                             navController.popBackStack()
+                            Toast.makeText(context, if (isNew) "پرسنل ثبت شد." else "تغییرات ذخیره شد.", Toast.LENGTH_SHORT).show()
                         } catch (e: Exception) {
                             error = "کد پرسنلی تکراری است یا خطایی رخ داد."
                         }

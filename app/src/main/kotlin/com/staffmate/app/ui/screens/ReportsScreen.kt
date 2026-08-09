@@ -13,6 +13,7 @@ import androidx.core.content.FileProvider
 import androidx.navigation.NavHostController
 import com.staffmate.app.StaffMateApp
 import com.staffmate.app.ui.Routes
+import com.staffmate.app.ui.components.EmptyState
 import com.staffmate.app.util.DateUtil
 import kotlinx.coroutines.launch
 import java.io.File
@@ -88,6 +89,9 @@ fun ReportsScreen(navController: NavHostController) {
                 modifier = Modifier.fillMaxWidth()
             ) { Text("Export CSV") }
             Spacer(Modifier.height(8.dp))
+            if (rows.isEmpty()) {
+                EmptyState("موردی مطابق فیلترها یافت نشد", "فیلترها را تغییر دهید یا ابتدا سوابقی ثبت کنید")
+            }
             LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 items(rows) { row ->
                     ElevatedCard(modifier = Modifier.fillMaxWidth()) {

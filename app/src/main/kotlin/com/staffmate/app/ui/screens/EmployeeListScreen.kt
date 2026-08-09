@@ -16,6 +16,7 @@ import androidx.navigation.NavHostController
 import com.staffmate.app.StaffMateApp
 import com.staffmate.app.data.Employee
 import com.staffmate.app.ui.Routes
+import com.staffmate.app.ui.components.EmptyState
 
 @Composable
 fun EmployeeListScreen(navController: NavHostController) {
@@ -51,6 +52,12 @@ fun EmployeeListScreen(navController: NavHostController) {
                 Text("فقط پرسنل فعال")
             }
             Spacer(Modifier.height(8.dp))
+            if (list.isEmpty()) {
+                EmptyState(
+                    title = if (query.isNotBlank()) "نتیجه‌ای یافت نشد" else "هنوز پرسنلی ثبت نشده",
+                    subtitle = if (query.isNotBlank()) "عبارت جست‌وجو را تغییر دهید" else "با دکمه + یک پرسنل جدید اضافه کنید"
+                )
+            }
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(list, key = { it.id }) { emp ->
                     EmployeeRow(emp) { navController.navigate(Routes.employeeProfile(emp.id)) }

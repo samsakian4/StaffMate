@@ -16,6 +16,7 @@ import androidx.navigation.NavHostController
 import com.staffmate.app.StaffMateApp
 import com.staffmate.app.data.*
 import com.staffmate.app.ui.Routes
+import com.staffmate.app.ui.components.EmptyState
 import com.staffmate.app.util.DateUtil
 
 private enum class ProfileTab(val label: String) {
@@ -84,28 +85,36 @@ fun EmployeeProfileScreen(navController: NavHostController, employeeId: Long) {
             }
             Box(modifier = Modifier.weight(1f)) {
                 when (tab) {
-                    ProfileTab.POSITIVE -> LazyColumn(contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ProfileTab.POSITIVE -> if (positives.isEmpty()) {
+                        EmptyState("هنوز نکته مثبتی ثبت نشده", "با دکمه + یک مورد اضافه کنید")
+                    } else LazyColumn(contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(positives, key = { it.id }) { note ->
                             NoteRow(title = note.title, subtitle = "${DateUtil.format(note.date)} · اهمیت: ${note.importance}", body = note.description) {
                                 navController.navigate(Routes.noteForm("positive", employeeId, note.id))
                             }
                         }
                     }
-                    ProfileTab.NEGATIVE -> LazyColumn(contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ProfileTab.NEGATIVE -> if (negatives.isEmpty()) {
+                        EmptyState("هنوز نکته منفی ثبت نشده", "با دکمه + یک مورد اضافه کنید")
+                    } else LazyColumn(contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(negatives, key = { it.id }) { note ->
                             NoteRow(title = note.title, subtitle = "${DateUtil.format(note.date)} · اهمیت: ${note.importance} · ${note.status}", body = note.description) {
                                 navController.navigate(Routes.noteForm("negative", employeeId, note.id))
                             }
                         }
                     }
-                    ProfileTab.PERSONALITY -> LazyColumn(contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ProfileTab.PERSONALITY -> if (personalities.isEmpty()) {
+                        EmptyState("هنوز ویژگی شخصیتی ثبت نشده", "با دکمه + یک مورد اضافه کنید")
+                    } else LazyColumn(contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(personalities, key = { it.id }) { note ->
                             NoteRow(title = "${note.title} (${note.type})", subtitle = DateUtil.format(note.date), body = note.description) {
                                 navController.navigate(Routes.noteForm("personality", employeeId, note.id))
                             }
                         }
                     }
-                    ProfileTab.DISCIPLINARY -> LazyColumn(contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ProfileTab.DISCIPLINARY -> if (disciplinaries.isEmpty()) {
+                        EmptyState("هنوز مورد انضباطی ثبت نشده", "با دکمه + یک مورد اضافه کنید")
+                    } else LazyColumn(contentPadding = PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(disciplinaries, key = { it.id }) { rec ->
                             NoteRow(title = rec.violationType, subtitle = "${DateUtil.format(rec.date)} · شدت: ${rec.severity}", body = rec.description) {
                                 navController.navigate(Routes.noteForm("disciplinary", employeeId, rec.id))
