@@ -66,15 +66,29 @@ fun EmployeeProfileScreen(navController: NavHostController, employeeId: Long) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("کد: ${emp.personnelCode}  |  ${emp.position}  |  ${emp.workplace}  |  ${emp.shift}")
                 Spacer(Modifier.height(8.dp))
-                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(12.dp)) {
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
+                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
                         Text("خلاصه عملکرد", style = MaterialTheme.typography.titleMedium)
                         if (totalRecords < 3) {
-                            Text("اطلاعات کافی برای ارزیابی وجود ندارد.", color = MaterialTheme.colorScheme.secondary)
+                            Text("اطلاعات کافی برای ارزیابی وجود ندارد.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         } else {
-                            Text("امتیاز فعلی: ${score ?: "-"}")
+                            val s = score ?: 0
+                            val scoreColor = when {
+                                s > 0 -> com.staffmate.app.ui.ScoreColors.positive
+                                s < 0 -> com.staffmate.app.ui.ScoreColors.negative
+                                else -> com.staffmate.app.ui.ScoreColors.neutral
+                            }
+                            Text(
+                                "امتیاز فعلی: $s",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = scoreColor
+                            )
                         }
-                        Text("مثبت: ${positives.size}   منفی: ${negatives.size}   شخصیتی: ${personalities.size}   انضباطی: ${disciplinaries.size}")
+                        Text("مثبت: ${positives.size}   منفی: ${negatives.size}   شخصیتی: ${personalities.size}   انضباطی: ${disciplinaries.size}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
