@@ -5,6 +5,9 @@ on:
     branches: [ main ]
   workflow_dispatch: {}
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,7 +29,27 @@ jobs:
           gradle-version: 8.7
 
       - name: Build Debug APK
-        run: gradle assembleDebug --no-daemon --stacktrace
+        id: build
+        run: |
+          set +e
+          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee build_output.log
+          echo "gradle_exit=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      - name: Save log on failure
+        if: steps.build.outputs.gradle_exit != '0'
+        run: |
+          git config user.email "ci@staffmate.app"
+          git config user.name "StaffMate CI"
+          mkdir -p .ci-logs
+          tail -n 400 build_output.log > .ci-logs/last_build_error.log
+          git add .ci-logs/last_build_error.log
+          git commit -m "ci: build error log [skip ci]" || true
+          git push || true
+
+      - name: Fail if build failed
+        if: steps.build.outputs.gradle_exit != '0'
+        run: exit 1
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
