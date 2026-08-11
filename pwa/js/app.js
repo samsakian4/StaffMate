@@ -1,4 +1,5 @@
 import { ensureDefaultSettings, getSetting } from './db.js';
+import { getSession, onAuthChange } from './auth.js';
 import { route, startRouter, navigate } from './router.js';
 import { renderDashboard } from './screens/dashboard.js';
 import { renderEmployees } from './screens/employees.js';
@@ -9,9 +10,15 @@ import { renderNoteForm } from './screens/noteForm.js';
 import { renderReports } from './screens/reports.js';
 import { renderSettings } from './screens/settings.js';
 import { renderPin } from './screens/pin.js';
+import { renderLogin } from './screens/login.js';
 
 async function guarded(renderFn) {
   return async (container, params) => {
+    const session = await getSession();
+    if (!session) {
+      navigate('#/login');
+      return;
+    }
     const pinEnabled = (await getSetting('pin_enabled', '0')) === '1';
     if (pinEnabled && sessionStorage.getItem('pin_verified') !== '1') {
       navigate('#/pin');
@@ -22,8 +29,7 @@ async function guarded(renderFn) {
 }
 
 async function init() {
-  await ensureDefaultSettings();
-
+  route('#/login', renderLogin);
   route('#/pin', renderPin);
   route('#/dashboard', await guarded(renderDashboard));
   route('#/employees', await guarded(renderEmployees));
@@ -33,6 +39,15 @@ async function init() {
   route('#/note-form/:type/:employeeId/:noteId', await guarded(renderNoteForm));
   route('#/reports', await guarded(renderReports));
   route('#/settings', await guarded(renderSettings));
+
+  const session = await getSession();
+  if (session) {
+    await ensureDefaultSettings();
+  }
+
+  onAuthChange((session) => {
+    if (session) ensureDefaultSettings();
+  });
 
   startRouter();
 

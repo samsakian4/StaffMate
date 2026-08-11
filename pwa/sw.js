@@ -1,6 +1,6 @@
 // Offline-first service worker: cache-first for the app shell.
 // No network calls are ever made — this only enables offline installability.
-const CACHE_NAME = 'staffmate-v1';
+const CACHE_NAME = 'staffmate-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -12,6 +12,11 @@ const ASSETS = [
   './js/layout.js',
   './js/utils.js',
   './js/scoring.js',
+  './js/config.js',
+  './js/supabaseClient.js',
+  './js/vendor/supabase.js',
+  './js/auth.js',
+  './js/screens/login.js',
   './js/screens/dashboard.js',
   './js/screens/employees.js',
   './js/screens/employeeForm.js',

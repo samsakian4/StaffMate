@@ -1,4 +1,5 @@
 import { DB, getSetting, setSetting } from '../db.js';
+import { signOut } from '../auth.js';
 import { renderShell } from '../layout.js';
 import { navigate } from '../router.js';
 import { el, sha256, showToast, confirmDialog } from '../utils.js';
@@ -124,4 +125,17 @@ export async function renderSettings(container) {
       fileInput.value = '';
     }
   });
+
+  content.appendChild(el('hr', { class: 'divider' }));
+  content.appendChild(el('button', {
+    class: 'btn btn-error btn-block',
+    onclick: async () => {
+      const ok = await confirmDialog({ title: 'خروج از حساب', message: 'از حساب کاربری خارج می‌شوید. برای ورود مجدد به رمز نیاز دارید.' });
+      if (ok) {
+        await signOut();
+        sessionStorage.clear();
+        navigate('#/login');
+      }
+    }
+  }, 'خروج از حساب'));
 }
