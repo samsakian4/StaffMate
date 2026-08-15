@@ -22,14 +22,27 @@ import com.staffmate.app.ui.StaffMateTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val repository = (application as StaffMateApp).repository
+        val app = application as StaffMateApp
         setContent {
             StaffMateTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     var startDestination by remember { mutableStateOf<String?>(null) }
                     LaunchedEffect(Unit) {
-                        val pinEnabled = repository.getSetting("pin_enabled", "0") == "1"
-                        startDestination = if (pinEnabled) Routes.PIN else Routes.DASHBOARD
+                        val token = app.sessionStore.currentAccessToken()
+                        if (token.isNullOrBlank()) {
+                            startDestination = Routes.LOGIN
+                        } else {
+                            try {
+                                app.repository.refreshAll()
+                                app.repository.ensureDefaultSettings()
+                                val pinEnabled = app.repository.getSetting("pin_enabled", "0") == "1"
+                                startDestination = if (pinEnabled) Routes.PIN else Routes.DASHBOARD
+                            } catch (e: Exception) {
+                                // Session likely expired/invalid — send the user back to login.
+                                app.sessionStore.clear()
+                                startDestination = Routes.LOGIN
+                            }
+                        }
                     }
                     val dest = startDestination
                     if (dest == null) {

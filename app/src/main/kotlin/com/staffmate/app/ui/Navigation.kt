@@ -10,6 +10,7 @@ import androidx.navigation.navArgument
 import com.staffmate.app.ui.screens.*
 
 object Routes {
+    const val LOGIN = "login"
     const val PIN = "pin"
     const val DASHBOARD = "dashboard"
     const val EMPLOYEES = "employees"
@@ -29,6 +30,7 @@ object Routes {
 fun StaffMateNavHost(startDestination: String) {
     val navController: NavHostController = rememberNavController()
     NavHost(navController = navController, startDestination = startDestination) {
+        composable(Routes.LOGIN) { LoginScreen(navController) }
         composable(Routes.PIN) { PinScreen(navController) }
         composable(Routes.DASHBOARD) { DashboardScreen(navController) }
         composable(Routes.EMPLOYEES) { EmployeeListScreen(navController) }

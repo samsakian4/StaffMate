@@ -1,13 +1,10 @@
 package com.staffmate.app.data
 
-import androidx.room.Entity
-import androidx.room.ForeignKey
-import androidx.room.Index
-import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 
-@Entity(tableName = "employees")
+@Serializable
 data class Employee(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val id: Long = 0,
     val personnelCode: String,
     val firstName: String,
     val lastName: String,
@@ -19,18 +16,9 @@ data class Employee(
     val updatedAt: Long = System.currentTimeMillis()
 )
 
-@Entity(
-    tableName = "positive_notes",
-    foreignKeys = [ForeignKey(
-        entity = Employee::class,
-        parentColumns = ["id"],
-        childColumns = ["employeeId"],
-        onDelete = ForeignKey.CASCADE
-    )],
-    indices = [Index("employeeId")]
-)
+@Serializable
 data class PositiveNote(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val id: Long = 0,
     val employeeId: Long,
     val title: String,
     val description: String = "",
@@ -39,18 +27,9 @@ data class PositiveNote(
     val createdAt: Long = System.currentTimeMillis()
 )
 
-@Entity(
-    tableName = "negative_notes",
-    foreignKeys = [ForeignKey(
-        entity = Employee::class,
-        parentColumns = ["id"],
-        childColumns = ["employeeId"],
-        onDelete = ForeignKey.CASCADE
-    )],
-    indices = [Index("employeeId")]
-)
+@Serializable
 data class NegativeNote(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val id: Long = 0,
     val employeeId: Long,
     val title: String,
     val description: String = "",
@@ -60,18 +39,9 @@ data class NegativeNote(
     val createdAt: Long = System.currentTimeMillis()
 )
 
-@Entity(
-    tableName = "personality_notes",
-    foreignKeys = [ForeignKey(
-        entity = Employee::class,
-        parentColumns = ["id"],
-        childColumns = ["employeeId"],
-        onDelete = ForeignKey.CASCADE
-    )],
-    indices = [Index("employeeId")]
-)
+@Serializable
 data class PersonalityNote(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val id: Long = 0,
     val employeeId: Long,
     val type: String, // مثبت / منفی
     val title: String,
@@ -80,18 +50,9 @@ data class PersonalityNote(
     val createdAt: Long = System.currentTimeMillis()
 )
 
-@Entity(
-    tableName = "disciplinary_records",
-    foreignKeys = [ForeignKey(
-        entity = Employee::class,
-        parentColumns = ["id"],
-        childColumns = ["employeeId"],
-        onDelete = ForeignKey.CASCADE
-    )],
-    indices = [Index("employeeId")]
-)
+@Serializable
 data class DisciplinaryRecord(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val id: Long = 0,
     val employeeId: Long,
     val date: Long,
     val violationType: String,
@@ -102,8 +63,8 @@ data class DisciplinaryRecord(
     val createdAt: Long = System.currentTimeMillis()
 )
 
-@Entity(tableName = "settings")
+@Serializable
 data class SettingEntity(
-    @PrimaryKey val key: String,
+    val key: String,
     val value: String
 )

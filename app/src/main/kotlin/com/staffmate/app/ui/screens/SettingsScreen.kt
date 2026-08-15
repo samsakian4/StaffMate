@@ -13,15 +13,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.staffmate.app.StaffMateApp
+import com.staffmate.app.data.BackupData
 import com.staffmate.app.ui.Routes
-import com.staffmate.app.util.BackupUtil
 import com.staffmate.app.util.PinUtil
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+
+private val backupJson = Json { prettyPrint = true; ignoreUnknownKeys = true }
 
 @Composable
 fun SettingsScreen(navController: NavHostController) {
     val context = LocalContext.current
-    val repository = (context.applicationContext as StaffMateApp).repository
+    val app = context.applicationContext as StaffMateApp
+    val repository = app.repository
     val scope = rememberCoroutineScope()
 
     var weightPositive by remember { mutableStateOf("1") }
@@ -42,6 +46,7 @@ fun SettingsScreen(navController: NavHostController) {
     var message by remember { mutableStateOf<String?>(null) }
     var showRestoreConfirm by remember { mutableStateOf(false) }
     var pendingRestoreUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var showSignOutConfirm by remember { mutableStateOf(false) }
 
     suspend fun loadAll() {
         weightPositive = repository.getSetting("weight_positive", "1")
@@ -60,16 +65,20 @@ fun SettingsScreen(navController: NavHostController) {
 
     LaunchedEffect(Unit) { loadAll() }
 
-    val createBackupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
+    val createBackupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) {
             scope.launch {
-                val ok = BackupUtil.exportBackup(context, uri)
-                message = if (ok) {
+                try {
+                    val data = repository.exportAllData()
+                    val text = backupJson.encodeToString(BackupData.serializer(), data)
+                    context.contentResolver.openOutputStream(uri)?.use { it.write(text.toByteArray()) }
                     val now = java.text.SimpleDateFormat("yyyy/MM/dd HH:mm", java.util.Locale.US).format(java.util.Date())
                     repository.setSetting("last_backup_date", now)
                     lastBackup = now
-                    "Backup با موفقیت ذخیره شد."
-                } else "خطا در ذخیره Backup."
+                    message = "Backup با موفقیت ذخیره شد."
+                } catch (e: Exception) {
+                    message = "خطا در ذخیره Backup."
+                }
             }
         }
     }
@@ -150,13 +159,17 @@ fun SettingsScreen(navController: NavHostController) {
 
             Divider()
             Text("Backup / Restore", style = MaterialTheme.typography.titleMedium)
+            Text("این Backup از داده‌های آنلاین (Supabase) گرفته می‌شود؛ فایل خروجی با نسخه وب هم سازگار است.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("آخرین Backup: $lastBackup")
             Button(
-                onClick = { createBackupLauncher.launch(BackupUtil.suggestedBackupFileName()) },
+                onClick = {
+                    val stamp = java.text.SimpleDateFormat("yyyy-MM-dd_HHmm", java.util.Locale.US).format(java.util.Date())
+                    createBackupLauncher.launch("StaffMate_Backup_$stamp.json")
+                },
                 modifier = Modifier.fillMaxWidth()
             ) { Text("تهیه Backup") }
             OutlinedButton(
-                onClick = { openRestoreLauncher.launch(arrayOf("application/octet-stream", "*/*")) },
+                onClick = { openRestoreLauncher.launch(arrayOf("application/json", "*/*")) },
                 modifier = Modifier.fillMaxWidth()
             ) { Text("بازیابی از Backup") }
 
@@ -164,29 +177,59 @@ fun SettingsScreen(navController: NavHostController) {
                 Spacer(Modifier.height(4.dp))
                 Text(it, color = MaterialTheme.colorScheme.primary)
             }
+
+            Divider()
+            OutlinedButton(
+                onClick = { showSignOutConfirm = true },
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("خروج از حساب") }
         }
 
         if (showRestoreConfirm && pendingRestoreUri != null) {
             AlertDialog(
                 onDismissRequest = { showRestoreConfirm = false },
                 title = { Text("هشدار بازیابی") },
-                text = { Text("تمام اطلاعات فعلی با اطلاعات فایل Backup جایگزین می‌شود. یک نسخه پشتیبان خودکار از وضعیت فعلی قبل از این کار گرفته می‌شود. ادامه می‌دهید؟") },
+                text = { Text("تمام اطلاعات آنلاین فعلی با اطلاعات فایل Backup جایگزین می‌شود. ادامه می‌دهید؟") },
                 confirmButton = {
                     TextButton(onClick = {
                         val uri = pendingRestoreUri!!
                         showRestoreConfirm = false
                         scope.launch {
-                            if (!BackupUtil.isValidBackup(context, uri)) {
+                            try {
+                                val text = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                                if (text.isNullOrBlank()) {
+                                    message = "فایل Backup نامعتبر یا خراب است."
+                                    return@launch
+                                }
+                                val data = backupJson.decodeFromString(BackupData.serializer(), text)
+                                repository.importAllData(data)
+                                message = "بازیابی با موفقیت انجام شد."
+                            } catch (e: Exception) {
                                 message = "فایل Backup نامعتبر یا خراب است."
-                                return@launch
                             }
-                            BackupUtil.autoBackupBeforeRestore(context)
-                            val ok = BackupUtil.importBackup(context, uri)
-                            message = if (ok) "بازیابی با موفقیت انجام شد." else "خطا در بازیابی."
                         }
                     }) { Text("ادامه") }
                 },
                 dismissButton = { TextButton(onClick = { showRestoreConfirm = false }) { Text("انصراف") } }
+            )
+        }
+
+        if (showSignOutConfirm) {
+            AlertDialog(
+                onDismissRequest = { showSignOutConfirm = false },
+                title = { Text("خروج از حساب") },
+                text = { Text("از حساب کاربری خارج می‌شوید. برای ورود مجدد به رمز عبور نیاز دارید.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showSignOutConfirm = false
+                        scope.launch {
+                            app.auth.signOut()
+                            navController.navigate(Routes.LOGIN) { popUpTo(0) }
+                        }
+                    }) { Text("خروج") }
+                },
+                dismissButton = { TextButton(onClick = { showSignOutConfirm = false }) { Text("انصراف") } }
             )
         }
     }
