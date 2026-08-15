@@ -2,12 +2,13 @@ import { DB } from '../db.js';
 import { renderShell } from '../layout.js';
 import { navigate } from '../router.js';
 import { el } from '../utils.js';
+import { icon } from '../icons.js';
 
 export async function renderDashboard(container) {
   const content = renderShell(container, {
     title: 'پرسنل‌یار',
     activeNav: '#/dashboard',
-    fab: { label: '+ ثبت مورد', onClick: () => navigate('#/quick-add') }
+    fab: { label: 'ثبت مورد', onClick: () => navigate('#/quick-add') }
   });
 
   const [employees, positives, negatives, disciplinary] = await Promise.all([
@@ -30,24 +31,25 @@ export async function renderDashboard(container) {
   });
   content.appendChild(searchWrap);
 
-  function statCard(label, value, icon, colorVar) {
+  function statCard(label, value, iconName, colorVar) {
     return el('div', { class: 'stat-card' }, [
-      el('div', { class: 'stat-icon', style: `background:color-mix(in srgb, var(${colorVar}) 18%, transparent); color:var(${colorVar});` }, icon),
+      el('div', {
+        class: 'stat-icon',
+        style: `background:color-mix(in srgb, var(${colorVar}) 16%, transparent); color:var(${colorVar});`,
+        html: icon(iconName, 18)
+      }),
       el('div', { class: 'stat-value' }, String(value)),
       el('div', { class: 'stat-label' }, label)
     ]);
   }
 
-  const grid1 = el('div', { class: 'stat-grid' }, [
-    statCard('پرسنل فعال', activeCount, '👥', '--primary'),
-    statCard('مثبت', positives, '👍', '--positive')
+  const grid = el('div', { class: 'stat-grid' }, [
+    statCard('پرسنل فعال', activeCount, 'users', '--primary'),
+    statCard('نکات مثبت', positives, 'thumbUp', '--positive'),
+    statCard('نکات منفی', negatives, 'thumbDown', '--negative'),
+    statCard('موارد انضباطی', disciplinary, 'scale', '--secondary')
   ]);
-  const grid2 = el('div', { class: 'stat-grid' }, [
-    statCard('منفی', negatives, '👎', '--negative'),
-    statCard('انضباطی', disciplinary, '⚖️', '--secondary')
-  ]);
-  content.appendChild(grid1);
-  content.appendChild(grid2);
+  content.appendChild(grid);
 
   content.appendChild(el('button', {
     class: 'btn btn-outline btn-block',
