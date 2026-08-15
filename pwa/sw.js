@@ -1,6 +1,6 @@
 // Offline-first service worker: cache-first for the app shell.
 // No network calls are ever made — this only enables offline installability.
-const CACHE_NAME = 'staffmate-v2';
+const CACHE_NAME = 'staffmate-v3';
 const ASSETS = [
   './',
   './index.html',
