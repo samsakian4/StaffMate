@@ -7,7 +7,7 @@ export async function renderEmployees(container) {
   const content = renderShell(container, {
     title: 'پرسنل',
     activeNav: '#/employees',
-    fab: { label: '+ افزودن پرسنل', onClick: () => navigate('#/employee-form/new') }
+    fab: { label: 'افزودن پرسنل', onClick: () => navigate('#/employee-form/new') }
   });
 
   const prefilled = sessionStorage.getItem('prefilledQuery') || '';

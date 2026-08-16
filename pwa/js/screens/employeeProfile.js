@@ -22,7 +22,7 @@ export async function renderEmployeeProfile(container, params) {
     showBack: true,
     backHash: '#/employees',
     fab: {
-      label: '+ افزودن سابقه',
+      label: 'افزودن سابقه',
       onClick: () => navigate(`#/note-form/${currentTab}/${employeeId}/new`)
     }
   });
