@@ -32,7 +32,7 @@ export async function renderEmployeeProfile(container, params) {
     return;
   }
 
-  content.appendChild(el('div', { style: 'color:var(--on-surface-variant);margin-bottom:10px;font-size:13px;' },
+  content.appendChild(el('div', { style: 'color:var(--text-muted);margin-bottom:10px;font-size:13px;' },
     `کد: ${emp.personnelCode}  |  ${emp.position || '-'}  |  ${emp.workplace || '-'}  |  ${emp.shift || '-'}`));
 
   const [positives, negatives, personalities, disciplinaries] = await Promise.all([
@@ -51,12 +51,12 @@ export async function renderEmployeeProfile(container, params) {
   const summaryCard = el('div', { class: 'card' });
   summaryCard.appendChild(el('div', { style: 'font-weight:600;margin-bottom:6px;' }, 'خلاصه عملکرد'));
   if (total < 3) {
-    summaryCard.appendChild(el('div', { style: 'color:var(--on-surface-variant);' }, 'اطلاعات کافی برای ارزیابی وجود ندارد.'));
+    summaryCard.appendChild(el('div', { style: 'color:var(--text-muted);' }, 'اطلاعات کافی برای ارزیابی وجود ندارد.'));
   } else {
     const cls = score > 0 ? 'score-positive' : (score < 0 ? 'score-negative' : 'score-neutral');
     summaryCard.appendChild(el('div', { class: cls, style: 'font-weight:600;font-size:16px;' }, `امتیاز فعلی: ${score}`));
   }
-  summaryCard.appendChild(el('div', { style: 'font-size:12px;color:var(--on-surface-variant);margin-top:6px;' },
+  summaryCard.appendChild(el('div', { style: 'font-size:12px;color:var(--text-muted);margin-top:6px;' },
     `مثبت: ${positives.length}   منفی: ${negatives.length}   شخصیتی: ${personalities.length}   انضباطی: ${disciplinaries.length}`));
   content.appendChild(summaryCard);
 

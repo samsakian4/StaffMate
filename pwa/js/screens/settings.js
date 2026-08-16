@@ -64,7 +64,7 @@ export async function renderSettings(container) {
 
   content.appendChild(el('hr', { class: 'divider' }));
   content.appendChild(el('div', { style: 'font-weight:600;margin-bottom:8px;' }, 'Backup / Restore'));
-  content.appendChild(el('div', { style: 'color:var(--on-surface-variant);font-size:13px;margin-bottom:8px;' },
+  content.appendChild(el('div', { style: 'color:var(--text-muted);font-size:13px;margin-bottom:8px;' },
     `آخرین Backup: ${values.last_backup_date || '-'}`));
 
   content.appendChild(el('button', {
