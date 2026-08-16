@@ -30,7 +30,8 @@ export async function renderSettings(container) {
   const content = renderShell(container, { title: 'تنظیمات', activeNav: '#/settings' });
 
   const keys = ['weight_positive', 'weight_negative', 'severity_low', 'severity_medium', 'severity_high', 'severity_very_high',
-    'shifts_list', 'positions_list', 'workplaces_list', 'violation_types_list', 'importance_list', 'pin_enabled', 'last_backup_date'];
+    'shifts_list', 'positions_list', 'workplaces_list', 'violation_types_list', 'importance_list',
+    'positive_titles_list', 'negative_titles_list', 'personality_titles_list', 'pin_enabled', 'last_backup_date'];
   const values = {};
   for (const k of keys) values[k] = await getSetting(k, '');
 
@@ -76,6 +77,17 @@ export async function renderSettings(container) {
   ));
   content.appendChild(sectionCard('سطوح اهمیت', 'در فرم نکات مثبت و منفی قابل انتخاب است.',
     createChipListEditor({ initial: values.importance_list, placeholder: 'مثلاً زیاد', onChange: (csv) => setSetting('importance_list', csv) })
+  ));
+
+  content.appendChild(el('div', { class: 'section-label' }, 'عناوین آماده سوابق'));
+  content.appendChild(sectionCard('عناوین نکات مثبت', 'در فرم ثبت نکته مثبت به‌عنوان گزینه آماده نمایش داده می‌شود.',
+    createChipListEditor({ initial: values.positive_titles_list, placeholder: 'مثلاً همکاری خوب', onChange: (csv) => setSetting('positive_titles_list', csv) })
+  ));
+  content.appendChild(sectionCard('عناوین نکات منفی', null,
+    createChipListEditor({ initial: values.negative_titles_list, placeholder: 'مثلاً تاخیر', onChange: (csv) => setSetting('negative_titles_list', csv) })
+  ));
+  content.appendChild(sectionCard('عناوین ویژگی شخصیتی', null,
+    createChipListEditor({ initial: values.personality_titles_list, placeholder: 'مثلاً مسئولیت‌پذیر', onChange: (csv) => setSetting('personality_titles_list', csv) })
   ));
 
   content.appendChild(el('div', { class: 'section-label' }, 'امنیت'));

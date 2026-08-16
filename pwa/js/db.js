@@ -204,6 +204,9 @@ export const DEFAULT_SETTINGS = {
   workplaces_list: 'خط تولید ۱,خط تولید ۲,انبار',
   violation_types_list: 'غیبت,تاخیر,عدم رعایت ایمنی,نافرمانی,سایر',
   importance_list: 'کم,متوسط,زیاد',
+  positive_titles_list: 'همکاری خوب,رعایت ایمنی,کیفیت کار بالا,کمک به همکاران,وقت‌شناسی,پیشنهاد بهبود',
+  negative_titles_list: 'تاخیر,غیبت,کیفیت پایین کار,عدم رعایت ایمنی,بی‌نظمی,عدم همکاری',
+  personality_titles_list: 'مسئولیت‌پذیر,منظم,همکاری‌جو,کم‌حوصله,منفعل,پرانرژی,کم‌حرف',
   pin_enabled: '0',
   pin_hash: '',
   last_backup_date: ''

@@ -13,8 +13,9 @@ const NEGATIVE_STATUSES = ['تکرار نشده', 'تکرار شده', 'برطر
 const SEVERITIES = ['کم', 'متوسط', 'زیاد', 'بسیار زیاد'];
 const PERSONALITY_TYPES = ['مثبت', 'منفی'];
 const TITLES = { positive: 'افزودن نکته مثبت', negative: 'افزودن نکته منفی', personality: 'افزودن ویژگی شخصیتی', disciplinary: 'افزودن مورد انضباطی' };
+const OTHER = 'سایر (وارد دستی)';
 
-function selectField(labelText, options, value) {
+function selectField(options, value) {
   const select = el('select', {});
   options.forEach(opt => {
     const o = el('option', { value: opt }, opt);
@@ -22,6 +23,21 @@ function selectField(labelText, options, value) {
     select.appendChild(o);
   });
   return select;
+}
+
+/** Dropdown of preset titles (managed in Settings) + a "سایر" fallback that reveals a free-text field. */
+function createTitlePicker(options, initialValue) {
+  const inList = initialValue && options.includes(initialValue);
+  const allOptions = [...options, OTHER];
+  const select = selectField(allOptions, inList ? initialValue : (initialValue ? OTHER : options[0]));
+  const customInput = el('input', { type: 'text', placeholder: 'عنوان را وارد کنید *', value: inList ? '' : (initialValue || '') });
+  customInput.style.display = select.value === OTHER ? '' : 'none';
+  select.addEventListener('change', () => {
+    customInput.style.display = select.value === OTHER ? '' : 'none';
+    if (select.value === OTHER) customInput.focus();
+  });
+  const wrap = el('div', {}, [select, customInput]);
+  return { element: wrap, getValue: () => (select.value === OTHER ? customInput.value.trim() : select.value) };
 }
 
 export async function renderNoteForm(container, params) {
@@ -42,48 +58,54 @@ export async function renderNoteForm(container, params) {
 
   const importanceOptions = (await getSetting('importance_list', 'کم,متوسط,زیاد')).split(',').map(s => s.trim()).filter(Boolean);
   const violationOptions = (await getSetting('violation_types_list', 'غیبت,تاخیر,عدم رعایت ایمنی,نافرمانی,سایر')).split(',').map(s => s.trim()).filter(Boolean);
+  const positiveTitleOptions = (await getSetting('positive_titles_list', '')).split(',').map(s => s.trim()).filter(Boolean);
+  const negativeTitleOptions = (await getSetting('negative_titles_list', '')).split(',').map(s => s.trim()).filter(Boolean);
+  const personalityTitleOptions = (await getSetting('personality_titles_list', '')).split(',').map(s => s.trim()).filter(Boolean);
 
   const dateInput = el('input', { type: 'text', placeholder: 'تاریخ (yyyy/MM/dd) *', value: existing ? formatIfNeeded(existing.date) : todayStr() });
   content.appendChild(el('label', { class: 'field-label' }, 'تاریخ'));
   content.appendChild(dateInput);
 
-  let titleInput, descInput, importanceSelect, statusSelect, typeSelect, violationSelect, severitySelect, actionInput, additionalInput;
+  let titlePicker, descInput, importanceSelect, statusSelect, typeSelect, violationSelect, severitySelect, actionInput, additionalInput;
 
   if (type === 'positive') {
-    titleInput = el('input', { type: 'text', placeholder: 'عنوان *', value: existing?.title || '' });
-    content.appendChild(titleInput);
+    content.appendChild(el('label', { class: 'field-label' }, 'عنوان'));
+    titlePicker = createTitlePicker(positiveTitleOptions, existing?.title);
+    content.appendChild(titlePicker.element);
     descInput = el('textarea', { rows: 3, placeholder: 'توضیح' }, existing?.description || '');
     content.appendChild(descInput);
     content.appendChild(el('label', { class: 'field-label' }, 'میزان اهمیت'));
-    importanceSelect = selectField('میزان اهمیت', importanceOptions, existing?.importance || importanceOptions[1] || importanceOptions[0]);
+    importanceSelect = selectField(importanceOptions, existing?.importance || importanceOptions[1] || importanceOptions[0]);
     content.appendChild(importanceSelect);
   } else if (type === 'negative') {
-    titleInput = el('input', { type: 'text', placeholder: 'عنوان *', value: existing?.title || '' });
-    content.appendChild(titleInput);
+    content.appendChild(el('label', { class: 'field-label' }, 'عنوان'));
+    titlePicker = createTitlePicker(negativeTitleOptions, existing?.title);
+    content.appendChild(titlePicker.element);
     descInput = el('textarea', { rows: 3, placeholder: 'توضیح' }, existing?.description || '');
     content.appendChild(descInput);
     content.appendChild(el('label', { class: 'field-label' }, 'میزان اهمیت'));
-    importanceSelect = selectField('اهمیت', importanceOptions, existing?.importance || importanceOptions[1] || importanceOptions[0]);
+    importanceSelect = selectField(importanceOptions, existing?.importance || importanceOptions[1] || importanceOptions[0]);
     content.appendChild(importanceSelect);
     content.appendChild(el('label', { class: 'field-label' }, 'وضعیت'));
-    statusSelect = selectField('وضعیت', NEGATIVE_STATUSES, existing?.status || NEGATIVE_STATUSES[0]);
+    statusSelect = selectField(NEGATIVE_STATUSES, existing?.status || NEGATIVE_STATUSES[0]);
     content.appendChild(statusSelect);
   } else if (type === 'personality') {
     content.appendChild(el('label', { class: 'field-label' }, 'نوع ویژگی'));
-    typeSelect = selectField('نوع', PERSONALITY_TYPES, existing?.type || PERSONALITY_TYPES[0]);
+    typeSelect = selectField(PERSONALITY_TYPES, existing?.type || PERSONALITY_TYPES[0]);
     content.appendChild(typeSelect);
-    titleInput = el('input', { type: 'text', placeholder: 'عنوان ویژگی *', value: existing?.title || '' });
-    content.appendChild(titleInput);
+    content.appendChild(el('label', { class: 'field-label' }, 'عنوان ویژگی'));
+    titlePicker = createTitlePicker(personalityTitleOptions, existing?.title);
+    content.appendChild(titlePicker.element);
     descInput = el('textarea', { rows: 3, placeholder: 'توضیح' }, existing?.description || '');
     content.appendChild(descInput);
   } else if (type === 'disciplinary') {
     content.appendChild(el('label', { class: 'field-label' }, 'نوع تخلف'));
-    violationSelect = selectField('نوع تخلف', violationOptions, existing?.violationType || violationOptions[0]);
+    violationSelect = selectField(violationOptions, existing?.violationType || violationOptions[0]);
     content.appendChild(violationSelect);
     descInput = el('textarea', { rows: 3, placeholder: 'توضیح' }, existing?.description || '');
     content.appendChild(descInput);
     content.appendChild(el('label', { class: 'field-label' }, 'شدت'));
-    severitySelect = selectField('شدت', SEVERITIES, existing?.severity || SEVERITIES[0]);
+    severitySelect = selectField(SEVERITIES, existing?.severity || SEVERITIES[0]);
     content.appendChild(severitySelect);
     actionInput = el('input', { type: 'text', placeholder: 'اقدام انجام‌شده', value: existing?.actionTaken || '' });
     content.appendChild(actionInput);
@@ -98,17 +120,18 @@ export async function renderNoteForm(container, params) {
     class: 'btn btn-primary btn-block',
     onclick: async () => {
       const dateMillis = parseDate(dateInput.value.trim());
-      if (type !== 'disciplinary' && !titleInput.value.trim()) {
+      const titleValue = titlePicker ? titlePicker.getValue() : '';
+      if (type !== 'disciplinary' && !titleValue) {
         errorEl.textContent = 'عنوان الزامی است.';
         return;
       }
       let record = { employeeId, date: dateMillis, createdAt: existing?.createdAt || Date.now() };
       if (type === 'positive') {
-        record = { ...record, title: titleInput.value.trim(), description: descInput.value.trim(), importance: importanceSelect.value };
+        record = { ...record, title: titleValue, description: descInput.value.trim(), importance: importanceSelect.value };
       } else if (type === 'negative') {
-        record = { ...record, title: titleInput.value.trim(), description: descInput.value.trim(), importance: importanceSelect.value, status: statusSelect.value };
+        record = { ...record, title: titleValue, description: descInput.value.trim(), importance: importanceSelect.value, status: statusSelect.value };
       } else if (type === 'personality') {
-        record = { ...record, type: typeSelect.value, title: titleInput.value.trim(), description: descInput.value.trim() };
+        record = { ...record, type: typeSelect.value, title: titleValue, description: descInput.value.trim() };
       } else {
         record = { ...record, violationType: violationSelect.value, description: descInput.value.trim(), severity: severitySelect.value, actionTaken: actionInput.value.trim(), additionalNotes: additionalInput.value.trim() };
       }
