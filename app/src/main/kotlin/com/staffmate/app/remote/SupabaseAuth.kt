@@ -1,5 +1,7 @@
 package com.staffmate.app.remote
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -26,6 +28,8 @@ sealed class AuthOutcome {
     data class Failure(val message: String) : AuthOutcome()
 }
 
+private data class CallResult(val response: okhttp3.Response?, val parsed: AuthResult?, val exceptionMessage: String?)
+
 class SupabaseAuth(private val client: OkHttpClient, private val sessionStore: SessionStore) {
     private val json = Json { ignoreUnknownKeys = true }
     private val jsonMedia = "application/json".toMediaType()
@@ -36,14 +40,15 @@ class SupabaseAuth(private val client: OkHttpClient, private val sessionStore: S
     }
 
     suspend fun signUp(email: String, password: String): AuthOutcome {
-        val pair = call("${SupabaseConfig.AUTH_URL}/signup", """{"email":"$email","password":"$password"}""")
-            ?: return AuthOutcome.Failure("خطا در ارتباط با سرور")
-        val (response, parsed) = pair
-        if (!response.isSuccessful) {
-            return AuthOutcome.Failure(parsed.error_description ?: parsed.msg ?: parsed.error ?: "خطای ثبت‌نام (${response.code})")
+        val result = call("${SupabaseConfig.AUTH_URL}/signup", """{"email":"$email","password":"$password"}""")
+        if (result.response == null || result.parsed == null) {
+            return AuthOutcome.Failure("خطا در ارتباط با سرور: ${result.exceptionMessage ?: "نامشخص"}")
         }
-        return if (parsed.access_token != null && parsed.user != null) {
-            sessionStore.save(parsed.access_token, parsed.refresh_token ?: "", parsed.user.id)
+        if (!result.response.isSuccessful) {
+            return AuthOutcome.Failure(result.parsed.error_description ?: result.parsed.msg ?: result.parsed.error ?: "خطای ثبت‌نام (${result.response.code})")
+        }
+        return if (result.parsed.access_token != null && result.parsed.user != null) {
+            sessionStore.save(result.parsed.access_token, result.parsed.refresh_token ?: "", result.parsed.user.id)
             AuthOutcome.SignedIn
         } else {
             AuthOutcome.ConfirmationRequired
@@ -51,13 +56,14 @@ class SupabaseAuth(private val client: OkHttpClient, private val sessionStore: S
     }
 
     suspend fun signIn(email: String, password: String): AuthOutcome {
-        val pair = call("${SupabaseConfig.AUTH_URL}/token?grant_type=password", """{"email":"$email","password":"$password"}""")
-            ?: return AuthOutcome.Failure("خطا در ارتباط با سرور")
-        val (response, parsed) = pair
-        if (!response.isSuccessful || parsed.access_token == null || parsed.user == null) {
-            return AuthOutcome.Failure(parsed.error_description ?: parsed.msg ?: parsed.error ?: "ایمیل یا رمز عبور اشتباه است")
+        val result = call("${SupabaseConfig.AUTH_URL}/token?grant_type=password", """{"email":"$email","password":"$password"}""")
+        if (result.response == null || result.parsed == null) {
+            return AuthOutcome.Failure("خطا در ارتباط با سرور: ${result.exceptionMessage ?: "نامشخص"}")
         }
-        sessionStore.save(parsed.access_token, parsed.refresh_token ?: "", parsed.user.id)
+        if (!result.response.isSuccessful || result.parsed.access_token == null || result.parsed.user == null) {
+            return AuthOutcome.Failure(result.parsed.error_description ?: result.parsed.msg ?: result.parsed.error ?: "ایمیل یا رمز عبور اشتباه است")
+        }
+        sessionStore.save(result.parsed.access_token, result.parsed.refresh_token ?: "", result.parsed.user.id)
         return AuthOutcome.SignedIn
     }
 
@@ -67,16 +73,16 @@ class SupabaseAuth(private val client: OkHttpClient, private val sessionStore: S
 
     suspend fun currentSession(): String? = sessionStore.currentAccessToken()
 
-    private fun call(url: String, body: String): Pair<okhttp3.Response, AuthResult>? {
-        return try {
+    private suspend fun call(url: String, body: String): CallResult = withContext(Dispatchers.IO) {
+        try {
             val reqBuilder = Request.Builder().url(url).post(body.toRequestBody(jsonMedia))
             baseHeaders(reqBuilder)
             val response = client.newCall(reqBuilder.build()).execute()
             val text = response.body?.string().orEmpty()
             val parsed = try { json.decodeFromString<AuthResult>(text) } catch (e: Exception) { AuthResult(msg = text) }
-            response to parsed
+            CallResult(response, parsed, null)
         } catch (e: Exception) {
-            null
+            CallResult(null, null, e.message ?: e.javaClass.simpleName)
         }
     }
 }
